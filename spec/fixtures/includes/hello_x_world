@@ -1,0 +1,1 @@
+hello {{locals[:x]}} world

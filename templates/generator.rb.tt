@@ -1,0 +1,40 @@
+Stackr::Template.new.tap do |t|
+
+  t.name = '<%= @template_name %>' # Name for this stack
+
+  # Map CloudFormation Stack parameters to environment variables
+  # Use this to hand in secrets that don't belong in the environment map
+  # like database passwords.
+  t.parameter_map = {
+    'Environment' => '$ENVIRONMENT'
+  }
+
+  # Uncomment if you have IAM resources in this template
+  # t.capabilities = ['CAPABILITY_IAM']
+
+  ##
+  ## CloudFormation template stuff goes here
+  ## See https://github.com/bazaarvoice/cloudformation-ruby-dsl
+  ##
+  t.template_dsl = template do
+    value AWSTemplateFormatVersion: '2010-09-09'
+    value Description: 'Template for <%= @template_name %>'
+
+    parameter 'Environment',
+      Description: 'Launch stack in this environment',
+      Type: 'String',
+      Default: 'dev',
+      AllowedValues: ['dev'] # Add new environment strings as necessary
+
+    # Add other parameters here.
+
+    # Add in the environment map in includes/environment_map.rb
+    # You can edit the map to include environment specific things
+    # like Vpc, Subnets, Security Groups, etc.
+    mapping 'EnvironmentMap', File.join(includes_path, 'environment_map.rb')
+
+    # Add resources here.
+
+    # Add outputs here.
+  end
+end
