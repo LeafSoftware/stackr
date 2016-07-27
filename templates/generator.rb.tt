@@ -6,11 +6,13 @@ Stackr::Template.new.tap do |t|
   # Use this to hand in secrets that don't belong in the environment map
   # like database passwords.
   t.parameter_map = {
-    'Environment' => '$ENVIRONMENT'
+    'Environment' => 'ENVIRONMENT'
   }
 
   # Uncomment if you have IAM resources in this template
   # t.capabilities = ['CAPABILITY_IAM']
+  # Or, if you have custom names for IAM resources, this instead
+  # t.capabilities = ['CAPABILITY_NAMED_IAM']
 
   ##
   ## CloudFormation template stuff goes here

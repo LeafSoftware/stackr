@@ -3,10 +3,11 @@ require 'spec_helper'
 describe Stackr::CloudFormation do
   it { should respond_to :is_too_big? }
   it { should respond_to :is_way_too_big? }
-  # it { should respond_to :create_stack }
-  # it { should respond_to :update_stack }
-  # it { should respond_to :delete_stack }
-  # it { should respond_to :validate_template }
+  it { should respond_to :create_stack }
+  it { should respond_to :update_stack }
+  it { should respond_to :delete_stack }
+  it { should respond_to :list_stacks }
+  it { should respond_to :validate_template }
 
   describe '#stack_parameters' do
     it 'fills parameters from environment variables' do

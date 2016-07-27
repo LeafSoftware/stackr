@@ -17,16 +17,20 @@ module Stackr
       end
 
       def templates_path()
-        @templates_path || File.join(File.basename(Dir.getwd), 'templates')
+        @templates_path || 'templates'
       end
 
       def json_template_path(name)
         File.join(templates_path, "#{name}.json")
       end
 
+      # Only load the template the first time
       def load_template(name)
-        template_file = File.join(templates_path, "#{name}.rb")
-        Stackr::Template.load(template_file)
+        if @template.nil?
+          template_file = File.join(templates_path, "#{name}.rb")
+          @template = Stackr::Template.load(template_file)
+        end
+        @template
       end
     end
 
@@ -46,7 +50,7 @@ module Stackr
     def create_project(name)
       @project_name = name
 
-      say "\nCreating stackr project: #{name}\n", :yellow
+      say "Creating stackr project: #{name}\n"
       directory 'templates/project', name
     end
 
@@ -54,18 +58,45 @@ module Stackr
     desc 'create-template TEMPLATE', 'create a new template generator'
     def create_template(name)
       @template_name = name
-      say "\nCreating template generator #{name}\n", :yellow
-      template 'templates/generator.rb.tt', "#{project_path}/templates/#{name}.rb"
+      say "Creating template generator #{name}\n"
+      template 'templates/generator.rb.tt', File.join(templates_path, "#{name}.rb")
     end
 
-    desc 'generate-template TEMPLATE', 'write the CloudFormation template json file'
-    def generate_template(name)
-      t = load_template(name)
-      json_file = json_template_path(name)
+    ## generate-template
+    desc 'generate-template TEMPLATE', 'write the template json file'
+    def generate_template(template_name)
+      template = load_template(template_name)
+      if !template
+        say "There is no template named \'#{template_name}\'."
+        return
+      end
 
-      say "\nWriting #{name} to #{json_file}"
+      json_file = json_template_path(template_name)
+
+      say "Writing #{template_name} to #{json_file}\n"
       File.open(json_file, 'w') do |f|
-        f.write(t.generate)
+        f.write(template.body)
+      end
+    end
+
+    ## validate-template
+    desc 'validate-template TEMPLATE', 'Verify template and parameters'
+    def validate_template(template_name)
+      template = load_template(template_name)
+      if !template
+        say "There is no template named \'#{template_name}\'."
+        return
+      end
+
+      launcher = Stackr::CloudFormation.new
+      begin
+        launcher.validate_template(template)
+      rescue Aws::S3::Errors::ServiceError => e
+        say e.message
+        return false
+      else
+        say "Template #{template_name} validates."
+        return true
       end
     end
 
@@ -82,10 +113,80 @@ module Stackr
 
     # TODO: log parameters and their values
     def create_stack(template_name)
-      say "\nCreating CloudFormation stack #{options[:name]}"
+      return if !validate_template(template_name)
+
       template = load_template(template_name)
+      if !template
+        say "There is no template named \'#{template_name}\'."
+        return
+      end
+
+      name = options[:name] || template.name
       launcher = Stackr::CloudFormation.new
-      launcher.create_stack(template, options)
+      say "Creating CloudFormation stack #{name} from template #{template.name}\n"
+      begin
+        launcher.create_stack(template, options)
+      rescue Stackr::StackAlreadyExistsError => e
+        say e.message
+      end
+    end
+
+    ## update-stack
+    desc 'update-stack TEMPLATE', 'update the stack created from TEMPLATE'
+    option :name,
+      aliases: '-n',
+      desc: 'Stack name, defaults to template name'
+
+    # TODO: log parameters and their values
+    def update_stack(template_name)
+      return if !validate_template(template_name)
+
+      template = load_template(template_name)
+      if !template
+        say "There is no template named \'#{template_name}\'."
+        return
+      end
+
+      name = options[:name] || template.name
+      say "Updating CloudFormation stack #{name} from template #{template.name}\n"
+      launcher = Stackr::CloudFormation.new
+      begin
+        launcher.update_stack(template, options)
+      rescue Stackr::StackMissingError => e
+        say e.message
+      rescue Stackr::StackUpdateNotRequiredError => e
+        say e.message
+      rescue Stackr::InsufficientCapabilitiesError => e
+        say e.message
+      end
+    end
+
+    ## delete-stack
+    desc 'delete-stack STACK', 'delete the stack named STACK'
+    def delete_stack(stack_name)
+      say "Deleting CloudFormation stack #{stack_name}\n"
+      launcher = Stackr::CloudFormation.new
+      begin
+        launcher.delete_stack(stack_name)
+      rescue Stackr::StackMissingError => e
+        say e.message
+      end
+    end
+
+    ## list-stacks
+    desc 'list-stacks', 'list all stacks'
+    def list_stacks
+      launcher = Stackr::CloudFormation.new
+      rows = []
+      launcher.list_stacks.each do |stack|
+        rows << [
+          stack.name,
+          stack.stack_status,
+          stack.creation_time ? stack.creation_time.iso8601 : '',
+          stack.last_updated_time ? stack.last_updated_time.iso8601 : ''
+        ]
+      end
+      print_table rows
     end
 
   end

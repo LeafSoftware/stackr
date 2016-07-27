@@ -1,4 +1,5 @@
 require 'stackr/version'
+require 'stackr/errors'
 require 'stackr/cli'
 require 'stackr/template'
 require 'stackr/template_helpers'

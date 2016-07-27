@@ -74,7 +74,7 @@ describe Stackr::Cli do
     before do
       clean_sandbox
       subject.destination_root = destination_path
-      subject.project_path = 'foo'
+      subject.templates_path   = templates_path
       capture(:stdout) { subject.create_project 'foo' }
       capture(:stdout) { subject.create_template 'foo' }
     end
@@ -83,7 +83,6 @@ describe Stackr::Cli do
       File.join(templates_path, 'foo.rb')
     }
 
-    it { should respond_to :create_template }
     it 'creates a new template generator' do
       expect(File.exist?(generator_path)).to be_truthy
     end
@@ -103,13 +102,16 @@ describe Stackr::Cli do
     before do
       clean_sandbox
       subject.destination_root = destination_path
-      subject.project_path = 'foo'
+      subject.templates_path = templates_path
       capture(:stdout) { subject.create_project 'foo' }
       FileUtils.cp File.join(fixtures_path, 'simple.rb'), templates_path
-      subject.templates_path = templates_path
     end
 
-    it { should respond_to :generate_template }
+    it 'bails if the template does not exist' do
+      content = capture(:stdout) { subject.generate_template 'missing'}
+      expect(content).to eq "There is no template named 'missing'.\n"
+    end
+
     it 'creates the json file' do
       capture(:stdout) { subject.generate_template 'simple' }
       json_file = File.join(templates_path, 'simple.json')
@@ -118,4 +120,90 @@ describe Stackr::Cli do
       expect(File.read(json_file)).to eq File.read(expected_file)
     end
   end
+
+  describe '#create_stack' do
+    before do
+      clean_sandbox
+      subject.destination_root = destination_path
+      subject.templates_path = templates_path
+      capture(:stdout) { subject.create_project 'foo' }
+      FileUtils.cp File.join(fixtures_path, 'simple.rb'), templates_path
+    end
+
+    it {should respond_to :create_stack}
+
+    it 'bails if the template does not exist' do
+      content = capture(:stdout) { subject.generate_template 'missing'}
+      expect(content).to eq "There is no template named 'missing'.\n"
+    end
+  end
+
+  describe '#update_stack' do
+    before do
+      clean_sandbox
+      subject.destination_root = destination_path
+      subject.templates_path = templates_path
+      capture(:stdout) { subject.create_project 'foo' }
+      FileUtils.cp File.join(fixtures_path, 'simple.rb'), templates_path
+    end
+
+    it {should respond_to :update_stack}
+
+    it 'bails if the template does not exist' do
+      content = capture(:stdout) { subject.generate_template 'missing'}
+      expect(content).to eq "There is no template named 'missing'.\n"
+    end
+  end
+
+  describe '#delete_stack' do
+    before do
+      clean_sandbox
+      subject.destination_root = destination_path
+      subject.templates_path = templates_path
+      capture(:stdout) { subject.create_project 'foo' }
+      FileUtils.cp File.join(fixtures_path, 'simple.rb'), templates_path
+    end
+
+    it {should respond_to :delete_stack}
+
+    it 'bails if the template does not exist' do
+      content = capture(:stdout) { subject.generate_template 'missing'}
+      expect(content).to eq "There is no template named 'missing'.\n"
+    end
+  end
+
+  describe '#list_stacks' do
+    before do
+      clean_sandbox
+      subject.destination_root = destination_path
+      subject.templates_path = templates_path
+      capture(:stdout) { subject.create_project 'foo' }
+      FileUtils.cp File.join(fixtures_path, 'simple.rb'), templates_path
+    end
+
+    it {should respond_to :list_stacks}
+
+    it 'bails if the template does not exist' do
+      content = capture(:stdout) { subject.generate_template 'missing'}
+      expect(content).to eq "There is no template named 'missing'.\n"
+    end
+  end
+
+  describe '#validate_template' do
+    before do
+      clean_sandbox
+      subject.destination_root = destination_path
+      subject.templates_path = templates_path
+      capture(:stdout) { subject.create_project 'foo' }
+      FileUtils.cp File.join(fixtures_path, 'simple.rb'), templates_path
+    end
+
+    it {should respond_to :validate_template}
+
+    it 'bails if the template does not exist' do
+      content = capture(:stdout) { subject.validate_template 'missing'}
+      expect(content).to eq "There is no template named 'missing'.\n"
+    end
+  end
+
 end
