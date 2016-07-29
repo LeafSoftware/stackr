@@ -46,10 +46,10 @@ Commands:
 1. Create a project with ```stackr create-project myproject```
 2. Change directory into your project ```cd myproject```
 3. ```cp .env.example .env``` and edit ```.env```
+5. ```source .env```
 2. Create a template with ```stackr create-template mytemplate```
 3. Edit the new template in ```templates/mytemplate.rb``` adding parameters, resources, outputs, etc. See [cloudformation-ruby-dsl](https://github.com/bazaarvoice/cloudformation-ruby-dsl) for tips
 4. Run ```stackr generate-template mytemplate``` and review the json document created at ```templates/mytemplate.json```
-5. ```source .env```
 5. Create a CloudFormation stack from your template using ```stackr create-stack mytemplate```
 6. List all of your stacks with ```stackr list-stacks```
 7. Tear your stack down with ```stackr delete-stack mytemplate```
@@ -60,7 +60,7 @@ Many times you want to include secrets as stack parameters. These secrets do not
 
 You can set up a mapping between stack parameters and environment variables using the template parameter_map method.
 
-This example tells stackr to fill in the "Environment" stack paramter with the contents of $ENVIRONMENT when creating or updating the stack.
+This example tells stackr to fill in the "Environment" stack parameter with the contents of $ENVIRONMENT when creating or updating the stack.
 
 ```ruby
 t.parameter_map = {
