@@ -6,7 +6,6 @@ Create CloudFormation templates using ruby DSL and launch them with a CLI.
 
 * Add options to create-template to add boilerplate stuff like vpc, instance, etc
 * Add tests for cli for all the exception handling
-* Add code to upload template to s3 before calling CloudFormation API when the template is too big
 
 ## Installation
 
