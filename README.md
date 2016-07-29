@@ -1,5 +1,7 @@
 # Stackr
 
+[![Build Status](https://travis-ci.org/LeafSoftware/stackr.svg?branch=master)](https://travis-ci.org/LeafSoftware/stackr)
+
 Create CloudFormation templates using ruby DSL and launch them with a CLI.
 
 ## TODO
