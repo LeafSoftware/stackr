@@ -22,7 +22,7 @@ module Stackr
     def upload_to_s3(template_str, name)
       s3 = Aws::S3::Resource.new
       if ENV['TEMPLATE_BUCKET'].nil?
-        raise Stackr::MissingTemplateBucketError, 'Please set TEMPLATE_BUCKET environment variable before uploading templates to S3.'
+        raise Stackr::TemplateBucketMissingError, 'Please set TEMPLATE_BUCKET environment variable before uploading templates to S3.'
       end
       bucket = s3.bucket(ENV['TEMPLATE_BUCKET'])
       key = "#{name}.json"
@@ -81,7 +81,7 @@ module Stackr
         env_var    = template.parameter_map[param_name]
 
         if param[:default_value].nil? && ENV[env_var].nil?
-          raise Stackr::MissingParameterError, "Required parameter #{param_name} (#{env_var}) not specified."
+          raise Stackr::ParameterMissingError, "Required parameter #{param_name} (#{env_var}) not specified."
         end
       end
     end
@@ -155,6 +155,104 @@ module Stackr
     def list_stacks
       cfn = Aws::CloudFormation::Resource.new
       cfn.stacks
+    end
+
+    # template is a Stackr::Template
+    def create_change_set(stack_name, template, change_set_name, options)
+      cfn = Aws::CloudFormation::Resource.new
+      stack = cfn.stack(stack_name)
+      if !stack
+        raise Stackr::StackMissingError, "Stack #{stack_name} does not exist."
+      end
+
+      opts = {
+        stack_name:      stack_name,
+        change_set_name: change_set_name,
+        parameters:      stack_parameters(template.parameter_map),
+        capabilities:    template.capabilities
+      }
+
+      # are we using template_body or template_url?
+      opts.merge!( template_argument(template) )
+
+      begin
+        # stack.update(opts)
+        resp = cfn.client.create_change_set(opts)
+      rescue Aws::CloudFormation::Errors::ValidationError => e
+        case e.message
+        when 'No updates are to be performed.'
+          raise Stackr::StackUpdateNotRequiredError, "Stack [#{stack_name}] requires no updates."
+        when "Stack [#{stack_name}] does not exist"
+          raise Stackr::StackMissingError, e.message
+        else
+          raise e
+        end
+      rescue Aws::CloudFormation::Errors::InsufficientCapabilitiesException => e
+        raise Stackr::InsufficientCapabilitiesError, "#{e.message}\nPlease add them to your template and run update again."
+      end
+      say "Change set #{change_set_name}, id: #{resp.id}"
+    end
+
+    def list_change_sets(stack_name)
+      cfn = Aws::CloudFormation::Resource.new
+      stack = cfn.stack(stack_name)
+      if !stack
+        raise Stackr::StackMissingError, "Stack #{stack_name} does not exist."
+      end
+      resp = cfn.client.list_change_sets({stack_name: stack_name})
+      return resp.summaries
+    end
+
+    def show_change_set(change_set_name, stack_name)
+      if stack_name.nil? && !change_set_name.start_with?('arn')
+        raise Stackr::StackNameMissingError, "If change_set_name is not an ARN, you must specify stack_name"
+      end
+
+      cfn = Aws::CloudFormation::Client.new
+      opts = {
+        change_set_name: change_set_name,
+        stack_name: stack_name
+      }
+      begin
+        resp = cfn.describe_change_set(opts)
+      rescue Aws::CloudFormation::Errors::ChangeSetNotFound => e
+        raise Stackr::ChangeSetMissingError, e.message
+      end
+      return resp.data
+    end
+
+    def delete_change_set(change_set_name, stack_name)
+      if stack_name.nil? && !change_set_name.start_with?('arn')
+        raise Stackr::StackNameMissingError, "If change_set_name is not an ARN, you must specify stack_name"
+      end
+
+      cfn = Aws::CloudFormation::Client.new
+      opts = {
+        change_set_name: change_set_name,
+        stack_name: stack_name
+      }
+      begin
+        resp = cfn.delete_change_set(opts)
+      rescue Aws::CloudFormation::Errors::ChangeSetNotFound => e
+        raise Stackr::ChangeSetMissingError, e.message
+      end
+    end
+
+    def execute_change_set(change_set_name, stack_name)
+      if stack_name.nil? && !change_set_name.start_with?('arn')
+        raise Stackr::StackNameMissingError, "If change_set_name is not an ARN, you must specify stack_name"
+      end
+
+      cfn = Aws::CloudFormation::Client.new
+      opts = {
+        change_set_name: change_set_name,
+        stack_name: stack_name
+      }
+      begin
+        cfn.execute_change_set(opts)
+      rescue Aws::CloudFormation::Errors::ChangeSetNotFound => e
+        raise Stackr::ChangeSetMissingError, e.message
+      end
     end
   end
 end

@@ -189,5 +189,121 @@ module Stackr
       print_table rows
     end
 
+    ## create-change-set
+    desc 'create-change-set TEMPLATE', 'create a change set'
+    option :change_set_name,
+      aliases: '-c',
+      desc: 'Change set name, defaults to "new-TEMPLATE"'
+
+    option :stack_name,
+      aliases: '-s',
+      desc: 'Stack name, defaults to TEMPLATE'
+
+    def create_change_set(template_name)
+      return if !validate_template(template_name)
+
+      template = load_template(template_name)
+      if !template
+        say "There is no template named \'#{template_name}\'."
+        return
+      end
+
+      change_set_name = options[:change_set_name] || "new-#{template.name}"
+      stack_name = options[:stack_name] || template.name
+      launcher = Stackr::CloudFormation.new
+      say "Creating CloudFormation stack change set #{change_set_name} from template #{template.name} for stack #{stack_name}\n"
+      begin
+        sets = launcher.create_change_set(stack_name, template, change_set_name, options)
+      rescue Stackr::StackMissingError => e
+        say e.message
+      rescue Stackr::StackUpdateNotRequiredError => e
+        say e.message
+      rescue Stackr::InsufficientCapabilitiesError => e
+        say e.message
+      end
+
+    end
+
+    desc 'list-change-sets STACK', 'list all change sets for STACK'
+    def list_change_sets(stack_name)
+      launcher = Stackr::CloudFormation.new
+      begin
+        sets = launcher.list_change_sets(stack_name)
+      rescue Stackr::StackMissingError => e
+        say e.message
+        return
+      end
+      rows = []
+      sets.each do |set|
+        rows << [
+          set.change_set_name,
+          set.creation_time,
+          set.execution_status,
+          set.status
+        ]
+      end
+      print_table rows
+    end
+
+    desc 'show-change-set CHANGESET', 'show json details of CHANGESET'
+    option :stack_name,
+      aliases: '-s',
+      desc: 'Stack name, required if CHANGESET is not an ARN'
+
+    def show_change_set(change_set_name)
+      launcher = Stackr::CloudFormation.new
+      stack_name = options[:stack_name]
+      begin
+        set = launcher.show_change_set(change_set_name, stack_name)
+      rescue Stackr::ChangeSetMissingError => e
+        say e.message
+        return
+      rescue Stackr::StackNameMissingError => e
+        say e.message
+        return
+      end
+      require 'json'
+      say JSON.pretty_generate(set)
+    end
+
+    desc 'delete-change-set CHANGESET', 'delete CHANGESET'
+    option :stack_name,
+      aliases: '-s',
+      desc: 'Stack name, required if CHANGESET is not an ARN'
+
+    def delete_change_set(change_set_name)
+      launcher = Stackr::CloudFormation.new
+      stack_name = options[:stack_name]
+      begin
+        launcher.delete_change_set(change_set_name, stack_name)
+      rescue Stackr::ChangeSetMissingError => e
+        say e.message
+        return
+      rescue Stackr::StackNameMissingError => e
+        say e.message
+        return
+      end
+      say "Change set #{change_set_name} deleted."
+    end
+
+    desc 'execute-change-set CHANGESET', 'execute CHANGESET'
+    option :stack_name,
+      aliases: '-s',
+      desc: 'Stack name, required if CHANGESET is not an ARN'
+
+    def execute_change_set(change_set_name)
+      launcher = Stackr::CloudFormation.new
+      stack_name = options[:stack_name]
+      begin
+        launcher.execute_change_set(change_set_name, stack_name)
+      rescue Stackr::ChangeSetMissingError => e
+        say e.message
+        return
+      rescue Stackr::StackNameMissingError => e
+        say e.message
+        return
+      end
+      say "Change set #{change_set_name} executed"
+    end
   end
 end
