@@ -91,11 +91,6 @@ describe Stackr::Cli do
       contents = File.read(generator_path)
       expect(contents).to match(/t.name = 'foo'/)
     end
-
-    it 'creates a generator that adds the environment map' do
-      contents = File.read(generator_path)
-      expect(contents).to match(/mapping 'EnvironmentMap', File.join\(t.includes_path, 'environment_map.rb'\)/)
-    end
   end
 
   describe '#generate_template' do
