@@ -19,6 +19,10 @@ describe Stackr::TemplateHelpers do
   end
 
   describe 'find_in_env' do
+    before(:each) do
+      load_environment_map(includes_path)
+    end
+
     it 'handles a map with > 64 attribures' do
       ENV['ENVIRONMENT'] = 'dev'
       expect(find_in_env('dev65')).to eq 'dev65'
@@ -27,6 +31,7 @@ describe Stackr::TemplateHelpers do
       ENV['ENVIRONMENT'] = 'dev'
       expect(find_in_env('dev65')).to eq 'dev65'
     end
+    
     it 'raises an exception if ENVIRONMENT not set' do
       ENV.delete 'ENVIRONMENT'
       expect { find_in_env('dev1') }.to raise_error(Stackr::EnvironmentMissingError)

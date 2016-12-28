@@ -12,7 +12,7 @@ module Stackr
       find_in_map('EnvironmentMap', ref('Environment'), name)
     end
 
-    def load_environment_map
+    def load_environment_map(includes_path='includes')
       if @environment_map.nil?
         map_path = File.join(includes_path, 'environment_map.rb')
         mappings = eval(File.read(map_path))
