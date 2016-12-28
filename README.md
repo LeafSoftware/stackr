@@ -76,6 +76,14 @@ You can use a ```.env``` file for your environment variables. It's included in t
 
 You may want to use the same template to launch stacks in different environments (e.g. 'dev', 'prd', 'test'). You can edit ```includes/environment_map.rb``` to configure your different environments. This is useful when you are creating resources in different VPCs or Regions for different environments.
 
+### Breaking Change in Behavior for 2.0.0
+
+In order to support mappings with greater than 64 attributes, we no longer add a mapping for ```includes/environment_map.rb``` directly in the template. Instead, we load the environment map into a lookup table and ```find_in_env``` simply returns the value it finds in that table. This greatly reduces the size if templates with very large environment maps.
+
+If you want to use the old 1.x deprecated behavior be sure to include this line in the body of your template script and use ```find_in_env_map()``` instead of ```find_in_env()```
+
+```mapping 'EnvironmentMap', File.join(t.includes_path, 'environment_map.rb')```
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/LeafSoftware/stackr.

@@ -6,7 +6,8 @@ module Stackr
   class TemplateValidationError < StandardError; end
   class ParameterMissingError < StandardError; end
   class TemplateTooBigError < StandardError; end
-  class TemplateMissingBucketError < StandardError; end
+  class TemplateBucketMissingError < StandardError; end
   class StackNameMissingError < StandardError; end
   class ChangeSetMissingError < StandardError; end
+  class EnvironmentMissingError < StandardError; end
 end

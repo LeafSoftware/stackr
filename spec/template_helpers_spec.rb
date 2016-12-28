@@ -3,7 +3,7 @@ require 'json'
 
 describe Stackr::TemplateHelpers do
 
-  describe 'find_in_env' do
+  describe 'find_in_env_map' do
     it 'returns a Fn::FindInMap fragment' do
       expected = {
         'Fn::FindInMap': [
@@ -14,7 +14,22 @@ describe Stackr::TemplateHelpers do
           'foo'
         ]
       }
-      expect(find_in_env('foo')).to eq expected
+      expect(find_in_env_map('foo')).to eq expected
+    end
+  end
+
+  describe 'find_in_env' do
+    it 'handles a map with > 64 attribures' do
+      ENV['ENVIRONMENT'] = 'dev'
+      expect(find_in_env('dev65')).to eq 'dev65'
+    end
+    it 'returns the string' do
+      ENV['ENVIRONMENT'] = 'dev'
+      expect(find_in_env('dev65')).to eq 'dev65'
+    end
+    it 'raises an exception if ENVIRONMENT not set' do
+      ENV.delete 'ENVIRONMENT'
+      expect { find_in_env('dev1') }.to raise_error(Stackr::EnvironmentMissingError)
     end
   end
 

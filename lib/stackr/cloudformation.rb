@@ -24,8 +24,11 @@ module Stackr
       if ENV['TEMPLATE_BUCKET'].nil?
         raise Stackr::TemplateBucketMissingError, 'Please set TEMPLATE_BUCKET environment variable before uploading templates to S3.'
       end
+      if ENV['ENVIRONMENT'].nil?
+        raise Stackr::EnvironmentMissingError, 'Please set ENVIRONMENT environment variable before uploading templates to S3.'
+      end
       bucket = s3.bucket(ENV['TEMPLATE_BUCKET'])
-      key = "#{name}.json"
+      key = "#{ENV['ENVIRONMENT']}/#{name}.json"
       if ENV['TEMPLATE_PREFIX']
         key = "#{ENV['TEMPLATE_PREFIX']}/#{key}"
       end
